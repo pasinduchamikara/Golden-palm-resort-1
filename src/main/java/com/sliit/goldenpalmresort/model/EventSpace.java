@@ -1,62 +1,31 @@
 package com.sliit.goldenpalmresort.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 
-@Entity
-@Table(name = "event_spaces")
+@Document(collection = "event_spaces")
 public class EventSpace {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(name = "name", nullable = false)
+    private String id;
     private String name;
-    
-    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-    
-    @Column(name = "capacity", nullable = false)
     private Integer capacity;
-    
-    @Column(name = "base_price", nullable = false)
     private BigDecimal basePrice;
-    
-    @Column(name = "setup_types")
-    private String setupTypes; // e.g., "Wedding,Conference,Meeting,Banquet"
-    
-    @Column(name = "amenities", columnDefinition = "TEXT")
+    private String setupTypes;
     private String amenities;
-    
-    @Column(name = "floor_number")
     private Integer floorNumber;
-    
-    @Column(name = "dimensions")
-    private String dimensions; // e.g., "20m x 15m"
-    
-    @Column(name = "catering_available")
+    private String dimensions;
     private boolean cateringAvailable = false;
-    
-    @Column(name = "audio_visual_equipment")
     private boolean audioVisualEquipment = false;
-    
-    @Column(name = "parking_available")
     private boolean parkingAvailable = false;
-    
-    @Enumerated(EnumType.STRING)
     private EventSpaceStatus status = EventSpaceStatus.AVAILABLE;
-    
-    @Column(name = "is_active")
     private boolean isActive = true;
-    
-    @Column(name = "image_urls", columnDefinition = "TEXT")
-    private String imageUrls; // Comma-separated URLs
-    
-    @OneToMany(mappedBy = "eventSpace", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Photo> photos = new ArrayList<>();
+    private String imageUrls;
+    private List<String> photoIds = new ArrayList<>();
     
     public enum EventSpaceStatus {
         AVAILABLE, BOOKED, MAINTENANCE, BLOCKED
@@ -73,8 +42,8 @@ public class EventSpace {
     }
     
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -118,6 +87,6 @@ public class EventSpace {
     public String getImageUrls() { return imageUrls; }
     public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
     
-    public List<Photo> getPhotos() { return photos; }
-    public void setPhotos(List<Photo> photos) { this.photos = photos; }
+    public List<String> getPhotoIds() { return photoIds; }
+    public void setPhotoIds(List<String> photoIds) { this.photoIds = photoIds; }
 } 

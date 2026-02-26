@@ -1,50 +1,27 @@
 package com.sliit.goldenpalmresort.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 
-@Entity
-@Table(name = "rooms")
+@Document(collection = "rooms")
 public class Room {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(name = "room_number", unique = true, nullable = false)
+    private String id;
     private String roomNumber;
-    
-    @Column(name = "room_type", nullable = false)
     private String roomType;
-    
-    @Column(name = "floor_number")
     private Integer floorNumber;
-    
-    @Column(name = "base_price", nullable = false)
     private BigDecimal basePrice;
-    
-    @Column(name = "capacity", nullable = false)
     private Integer capacity;
-    
-    @Column(name = "description")
     private String description;
-    
-    @Column(name = "amenities")
     private String amenities;
-    
-    @Enumerated(EnumType.STRING)
     private RoomStatus status = RoomStatus.AVAILABLE;
-    
-    @Column(name = "is_active")
     private boolean isActive = true;
-    
-    @Column(name = "image_urls", columnDefinition = "TEXT")
     private String imageUrls; // Comma-separated URLs
-    
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Photo> photos = new ArrayList<>();
+    private List<String> photoIds = new ArrayList<>();
     
     public enum RoomStatus {
         AVAILABLE, OCCUPIED, MAINTENANCE, BLOCKED
@@ -62,8 +39,8 @@ public class Room {
     }
     
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     
     public String getRoomNumber() { return roomNumber; }
     public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
@@ -95,6 +72,6 @@ public class Room {
     public String getImageUrls() { return imageUrls; }
     public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
     
-    public List<Photo> getPhotos() { return photos; }
-    public void setPhotos(List<Photo> photos) { this.photos = photos; }
+    public List<String> getPhotoIds() { return photoIds; }
+    public void setPhotoIds(List<String> photoIds) { this.photoIds = photoIds; }
 } 

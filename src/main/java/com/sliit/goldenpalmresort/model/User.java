@@ -1,6 +1,7 @@
 package com.sliit.goldenpalmresort.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,44 +10,23 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 public class User implements UserDetails {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     
     private String username;
-    
-    @Column(unique = true, nullable = false)
     private String email;
-    
-    @Column(nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
-    
-    @Column(name = "first_name", nullable = false)
     private String firstName;
     private String lastName;
-    
-    @Column
     private String phone;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
     private UserRole role;
-    
-    @Column(name = "is_active")
     private boolean isActive = true;
-    
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    @Column(name = "last_login")
     private LocalDateTime lastLogin;
     
     public User() {}
@@ -60,14 +40,12 @@ public class User implements UserDetails {
         this.role = role;
     }
     
-    @PrePersist
-    protected void onCreate() {
+    public void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
     
-    @PreUpdate
-    protected void onUpdate() {
+    public void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
     
@@ -97,8 +75,8 @@ public class User implements UserDetails {
     }
     
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }

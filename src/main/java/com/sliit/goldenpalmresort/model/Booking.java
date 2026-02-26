@@ -1,56 +1,28 @@
 package com.sliit.goldenpalmresort.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "bookings")
+@Document(collection = "bookings")
 public class Booking {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
-    @Column(name = "booking_reference", unique = true, nullable = false)
+    private String id;
     private String bookingReference;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", nullable = false)
-    private Room room;
-    
-    @Column(name = "check_in_date", nullable = false)
+    private String userId;
+    private String roomId;
     private LocalDate checkInDate;
-    
-    @Column(name = "check_out_date", nullable = false)
     private LocalDate checkOutDate;
-    
-    @Column(name = "guest_count", nullable = false)
     private Integer guestCount;
-    
-    @Column(name = "total_amount", nullable = false)
     private BigDecimal totalAmount;
-    
-    @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.PENDING;
-    
-    @Column(name = "special_requests")
     private String specialRequests;
-    
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private User createdBy;
+    private String createdBy;
     
     public enum BookingStatus {
         PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED
@@ -59,17 +31,16 @@ public class Booking {
     // Constructors
     public Booking() {}
     
-    public Booking(User user, Room room, LocalDate checkInDate, LocalDate checkOutDate, Integer guestCount) {
-        this.user = user;
-        this.room = room;
+    public Booking(String userId, String roomId, LocalDate checkInDate, LocalDate checkOutDate, Integer guestCount) {
+        this.userId = userId;
+        this.roomId = roomId;
         this.checkInDate = checkInDate;
         this.checkOutDate = checkOutDate;
         this.guestCount = guestCount;
         this.bookingReference = generateBookingReference();
     }
     
-    @PrePersist
-    protected void onCreate() {
+    public void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (bookingReference == null) {
@@ -77,8 +48,7 @@ public class Booking {
         }
     }
     
-    @PreUpdate
-    protected void onUpdate() {
+    public void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
     
@@ -92,17 +62,17 @@ public class Booking {
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     
     public String getBookingReference() { return bookingReference; }
     public void setBookingReference(String bookingReference) { this.bookingReference = bookingReference; }
     
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
     
-    public Room getRoom() { return room; }
-    public void setRoom(Room room) { this.room = room; }
-    
-    public LocalDate getCheckInDate() { return checkInDate; }
+    public String getRoomId() { return roomId; }
+    public void setRoomId(String roomId) { this.roomId = roomIdnDate; }
     public void setCheckInDate(LocalDate checkInDate) { this.checkInDate = checkInDate; }
     
     public LocalDate getCheckOutDate() { return checkOutDate; }
@@ -126,6 +96,6 @@ public class Booking {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     
-    public User getCreatedBy() { return createdBy; }
-    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
 }
