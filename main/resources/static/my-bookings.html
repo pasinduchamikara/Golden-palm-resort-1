@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Bookings - Golden Palm Resort</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        body { padding-top: 70px; background-color: #f8f9fa; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .badge-status { font-size: 0.8rem; }
+        .booking-actions .btn { margin-right: 8px; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-palm-tree me-2"></i>Golden Palm Resort
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="my-bookings.html">My Bookings</a></li>
+                    <li class="nav-item" id="logoutNav"><a class="nav-link" href="#" onclick="logout()">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="alertContainer"></div>
+        
+        <!-- Notifications Section -->
+        <div class="card mb-4" id="notificationsCard" style="display: none;">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Notifications</h5>
+                <button class="btn btn-sm btn-light" onclick="markAllNotificationsRead()">
+                    <i class="fas fa-check-double me-1"></i>Mark All Read
+                </button>
+            </div>
+            <div class="card-body" id="notificationsContainer">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">My Bookings</h2>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="loadNotifications()">
+                    <i class="fas fa-bell me-1"></i>
+                    <span class="badge bg-danger" id="notificationBadge" style="display: none;">0</span>
+                </button>
+                <a href="/" class="btn btn-outline-secondary"><i class="fas fa-plus me-2"></i>New Booking</a>
+            </div>
+        </div>
+
+        <div id="bookingsContainer" class="row g-3">
+            <!-- Booking cards will render here -->
+        </div>
+
+        <div id="emptyState" class="empty-state d-none">
+            <i class="fas fa-suitcase-rolling fa-3x mb-3"></i>
+            <h5>No bookings yet</h5>
+            <p>When you make a booking, it will appear here.</p>
+            <a href="/" class="btn btn-primary">Book a Room</a>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal fade" id="cancelConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Booking</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>How would you like to proceed with this cancellation?</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-warning" onclick="showRefundForm()">
+                            <i class="fas fa-money-bill-wave me-2"></i>Request a Refund
+                        </button>
+                        <button class="btn btn-danger" onclick="cancelWithoutRefund()">
+                            <i class="fas fa-ban me-2"></i>Cancel Anyway (No Refund)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refund Request Form Modal -->
+    <div class="modal fade" id="refundRequestModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Request Refund</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="refundRequestForm">
+                        <h6 class="mb-3">Booking Details</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Booking Reference</label>
+                                <input type="text" class="form-control" id="refundBookingRef" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Refund Amount</label>
+                                <input type="text" class="form-control" id="refundAmount" readonly>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Booking Details</label>
+                                <input type="text" class="form-control" id="refundBookingDetails" readonly>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <h6 class="mb-3">Bank Account Details</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Account Holder Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="accountHolderName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Bank Account Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="bankAccountNumber" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Bank Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="bankName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Bank Branch <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="bankBranch" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Refund (Optional)</label>
+                            <textarea class="form-control" id="refundReason" rows="3" placeholder="Please provide a reason for your refund request..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitRefundRequest()">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Refund Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ensure user is logged in
+            const token = localStorage.getItem('authToken');
+            const user = JSON.parse(localStorage.getItem('userInfo') || 'null');
+            if (!token || !user) {
+                showAlert('Please login to view your bookings.', 'warning');
+                setTimeout(() => window.location.href = 'login.html', 1200);
+                return;
+            }
+            loadCombinedBookings();
+        });
+
+        // Load both room and event bookings and render as a single list
+        async function loadCombinedBookings() {
+            toggleEmpty(true);
+            const token = localStorage.getItem('authToken');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            try {
+                // Fetch room bookings (requires auth)
+                const roomResp = await fetch('/api/bookings/user', { headers });
+                if (roomResp.status === 401) {
+                    showAlert('Your session expired. Please login again.', 'warning');
+                    setTimeout(() => window.location.href = 'login.html', 1200);
+                    return;
+                }
+                const roomBookings = (await roomResp.json()) || [];
+
+                // Fetch event bookings (currently controller may not use auth; include header anyway)
+                let eventBookings = [];
+                try {
+                    const eventResp = await fetch('/api/event-bookings', { headers });
+                    if (eventResp.ok) {
+                        eventBookings = (await eventResp.json()) || [];
+                    }
+                } catch (e) {
+                    // Non-fatal if event endpoint not available
+                    console.warn('Event bookings fetch skipped/failed:', e);
+                }
+
+                // Normalize into a single list with type badges
+                const normalized = [];
+                for (const b of roomBookings) {
+                    normalized.push({
+                        type: 'ROOM',
+                        bookingReference: b.bookingReference,
+                        title: `Room ${b.roomNumber || b.roomId || ''} ${b.roomType ? '(' + b.roomType + ')' : ''}`.trim(),
+                        subtitle: `${b.checkInDate} → ${b.checkOutDate}`,
+                        guests: b.guestCount,
+                        amount: b.totalAmount || 0,
+                        status: b.status,
+                        createdAt: b.createdAt,
+                        actions: { canCancel: b.status === 'CONFIRMED' || b.status === 'PENDING', room: true }
+                    });
+                }
+                for (const e of eventBookings) {
+                    normalized.push({
+                        type: 'EVENT',
+                        bookingReference: e.bookingReference,
+                        title: e.eventSpace?.name ? `Event @ ${e.eventSpace.name}` : (e.eventType || 'Event'),
+                        subtitle: `${e.eventDate} ${e.startTime || ''}${e.endTime ? ' → ' + e.endTime : ''}`.trim(),
+                        guests: e.expectedGuests,
+                        amount: e.totalAmount || 0,
+                        status: e.status,
+                        createdAt: e.createdAt,
+                        id: e.id,
+                        actions: { canCancel: e.status === 'CONFIRMED' || e.status === 'PENDING', room: false }
+                    });
+                }
+
+                // Sort newest first by createdAt if present, else leave as-is
+                normalized.sort((a, b) => {
+                    const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return db - da;
+                });
+
+                renderCombined(normalized);
+            } catch (err) {
+                console.error('Error loading combined bookings:', err);
+                showAlert('Failed to load bookings. Please try again.', 'danger');
+            }
+        }
+
+        function renderCombined(list) {
+            const container = document.getElementById('bookingsContainer');
+            container.innerHTML = '';
+            if (!list.length) { toggleEmpty(true); return; }
+            toggleEmpty(false);
+
+            list.forEach(item => {
+                const statusBadge = getStatusBadge(item.status);
+                const typeBadge = item.type === 'EVENT' ? '<span class="badge bg-info me-2">Event</span>' : '<span class="badge bg-primary me-2">Room</span>';
+                const guestsHtml = item.guests ? `<span class="ms-3"><i class="fas fa-users me-1"></i>Guests: ${item.guests}</span>` : '';
+                const card = document.createElement('div');
+                card.className = 'col-12';
+                card.innerHTML = `
+                    <div class="card" data-booking-ref="${escapeHtml(item.bookingReference || '')}" data-amount="${item.amount || 0}" data-details="${escapeHtml(item.title + ' - ' + item.subtitle)}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title mb-1">${typeBadge} ${escapeHtml(item.title)}</h5>
+                                    <div class="text-muted small mb-2">
+                                        <i class="fas fa-calendar-check me-1"></i>${escapeHtml(item.subtitle)}
+                                        ${guestsHtml}
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-status ${statusBadge.class}">${statusBadge.text}</span>
+                                        <span class="ms-2 text-muted small">Ref: ${escapeHtml(item.bookingReference || '')}</span>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="h5 mb-2">LKR ${(item.amount || 0).toLocaleString()}</div>
+                                    <div class="booking-actions">
+                                        ${item.actions.canCancel ? `
+                                        <button class="btn btn-sm btn-outline-danger" onclick="${item.actions.room ? `cancelBooking('${item.bookingReference}')` : `cancelEventBooking(${item.id}, '${item.bookingReference}', ${item.amount}, '${escapeHtml(item.title + ' - ' + item.subtitle)}')`}">
+                                            <i class="fas fa-ban me-1"></i>Cancel
+                                        </button>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
+        let currentCancelBooking = null;
+        let currentCancelType = null;
+
+        async function cancelBooking(bookingReference) {
+            // Find the booking details
+            const bookingItem = document.querySelector(`[data-booking-ref="${bookingReference}"]`);
+            if (!bookingItem) {
+                showAlert('Booking not found.', 'danger');
+                return;
+            }
+            
+            currentCancelBooking = {
+                reference: bookingReference,
+                type: 'ROOM',
+                amount: bookingItem.dataset.amount,
+                details: bookingItem.dataset.details
+            };
+            
+            // Show cancel confirmation modal
+            const modal = new bootstrap.Modal(document.getElementById('cancelConfirmModal'));
+            modal.show();
+        }
+
+        function showRefundForm() {
+            // Close cancel confirmation modal
+            const cancelModal = bootstrap.Modal.getInstance(document.getElementById('cancelConfirmModal'));
+            cancelModal.hide();
+            
+            // Populate refund form
+            document.getElementById('refundBookingRef').value = currentCancelBooking.reference;
+            document.getElementById('refundAmount').value = 'LKR ' + parseFloat(currentCancelBooking.amount).toLocaleString();
+            document.getElementById('refundBookingDetails').value = currentCancelBooking.details;
+            
+            // Show refund request modal
+            const refundModal = new bootstrap.Modal(document.getElementById('refundRequestModal'));
+            refundModal.show();
+        }
+
+        async function cancelWithoutRefund() {
+            // Close cancel confirmation modal
+            const cancelModal = bootstrap.Modal.getInstance(document.getElementById('cancelConfirmModal'));
+            cancelModal.hide();
+            
+            if (!confirm('Are you sure you want to cancel without requesting a refund? This action cannot be undone.')) return;
+            
+            try {
+                const resp = await fetch(`/api/bookings/${currentCancelBooking.reference}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                if (resp.ok) {
+                    showAlert('Booking cancelled successfully.', 'success');
+                    loadCombinedBookings();
+                } else if (resp.status === 401) {
+                    showAlert('Your session expired. Please login again.', 'warning');
+                    setTimeout(() => window.location.href = 'login.html', 1200);
+                } else {
+                    showAlert('Failed to cancel booking.', 'danger');
+                }
+            } catch (err) {
+                console.error('Cancel booking error:', err);
+                showAlert('Failed to cancel booking.', 'danger');
+            }
+        }
+
+        async function submitRefundRequest() {
+            // Validate form
+            const accountHolderName = document.getElementById('accountHolderName').value.trim();
+            const bankAccountNumber = document.getElementById('bankAccountNumber').value.trim();
+            const bankName = document.getElementById('bankName').value.trim();
+            const bankBranch = document.getElementById('bankBranch').value.trim();
+            
+            if (!accountHolderName || !bankAccountNumber || !bankName || !bankBranch) {
+                showAlert('Please fill in all required bank details.', 'warning');
+                return;
+            }
+            
+            const refundData = {
+                bookingReference: currentCancelBooking.reference,
+                bookingType: currentCancelBooking.type,
+                refundAmount: parseFloat(currentCancelBooking.amount),
+                accountHolderName: accountHolderName,
+                bankAccountNumber: bankAccountNumber,
+                bankName: bankName,
+                bankBranch: bankBranch,
+                reason: document.getElementById('refundReason').value.trim()
+            };
+            
+            try {
+                const resp = await fetch('/api/refund-requests', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(refundData)
+                });
+                
+                if (resp.ok) {
+                    // Close modal
+                    const refundModal = bootstrap.Modal.getInstance(document.getElementById('refundRequestModal'));
+                    refundModal.hide();
+                    
+                    // Clear form
+                    document.getElementById('refundRequestForm').reset();
+                    
+                    showAlert('Refund request submitted successfully! Our payment officer will review it shortly.', 'success');
+                    loadCombinedBookings();
+                } else if (resp.status === 401) {
+                    showAlert('Your session expired. Please login again.', 'warning');
+                    setTimeout(() => window.location.href = 'login.html', 1200);
+                } else {
+                    showAlert('Failed to submit refund request. Please try again.', 'danger');
+                }
+            } catch (err) {
+                console.error('Submit refund request error:', err);
+                showAlert('Failed to submit refund request. Please try again.', 'danger');
+            }
+        }
+
+        async function cancelEventBooking(id, bookingReference, amount, details) {
+            currentCancelBooking = {
+                id: id,
+                reference: bookingReference,
+                type: 'EVENT',
+                amount: amount,
+                details: details
+            };
+            
+            // Show cancel confirmation modal
+            const modal = new bootstrap.Modal(document.getElementById('cancelConfirmModal'));
+            modal.show();
+        }
+
+        function getStatusBadge(status) {
+            switch ((status || '').toUpperCase()) {
+                case 'CONFIRMED': return { class: 'bg-success', text: 'Confirmed' };
+                case 'PENDING': return { class: 'bg-warning text-dark', text: 'Pending' };
+                case 'CANCELLED': return { class: 'bg-danger', text: 'Cancelled' };
+                case 'REFUNDED': return { class: 'bg-info', text: 'Cancelled & Refunded' };
+                case 'COMPLETED': return { class: 'bg-primary', text: 'Completed' };
+                default: return { class: 'bg-secondary', text: status || 'Unknown' };
+            }
+        }
+
+        function toggleEmpty(show) {
+            document.getElementById('emptyState').classList.toggle('d-none', !show);
+            document.getElementById('bookingsContainer').classList.toggle('d-none', show);
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            alertContainer.appendChild(alert);
+            setTimeout(() => { try { alert.remove(); } catch(_){} }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            window.location.href = 'login.html';
+        }
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/[&<>"]+/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+        }
+
+        // Notification functions
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const notifications = await response.json();
+                    displayNotifications(notifications);
+                    updateNotificationBadge(notifications.filter(n => !n.isRead).length);
+                } else {
+                    console.error('Failed to load notifications');
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notificationsContainer');
+            const card = document.getElementById('notificationsCard');
+
+            if (notifications.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+
+            card.style.display = 'block';
+            container.innerHTML = notifications.map(notif => `
+                <div class="alert ${notif.isRead ? 'alert-secondary' : 'alert-primary'} d-flex justify-content-between align-items-start" role="alert">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge ${getNotificationTypeBadge(notif.type)} me-2">${notif.type.replace('_', ' ')}</span>
+                            <strong>${escapeHtml(notif.title)}</strong>
+                        </div>
+                        <p class="mb-1">${escapeHtml(notif.message)}</p>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${formatNotificationDate(notif.createdAt)}
+                            ${notif.sentBy ? ` • Sent by: ${escapeHtml(notif.sentBy)}` : ''}
+                        </small>
+                    </div>
+                    <div class="ms-3">
+                        ${!notif.isRead ? `
+                            <button class="btn btn-sm btn-outline-primary mb-2" onclick="markNotificationRead(${notif.id})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNotification(${notif.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getNotificationTypeBadge(type) {
+            switch(type) {
+                case 'PAYMENT_REMINDER': return 'bg-warning text-dark';
+                case 'REFUND_APPROVED': return 'bg-success';
+                case 'BOOKING_UPDATE': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function formatNotificationDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            return date.toLocaleDateString();
+        }
+
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function markNotificationRead(id) {
+            try {
+                const response = await fetch(`/api/notifications/${id}/read`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        async function markAllNotificationsRead() {
+            try {
+                const response = await fetch('/api/notifications/read-all', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showAlert('All notifications marked as read', 'success');
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+            }
+        }
+
+        async function deleteNotification(id) {
+            try {
+                const response = await fetch(`/api/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showAlert('Notification deleted', 'success');
+                    loadNotifications();
+                }
+            } catch (error) {
+                console.error('Error deleting notification:', error);
+            }
+        }
+
+        // Load notifications on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+            // Refresh notifications every 30 seconds
+            setInterval(loadNotifications, 30000);
+        });
+    </script>
+</body>
+</html>
